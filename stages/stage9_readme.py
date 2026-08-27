@@ -40,7 +40,7 @@ file (and ideally unique across both files).
 | `sub_benchmark` | string or null | no | Subset/partition of the benchmark, e.g. `"2024-I"`; use `null` when there is none |
 | `problem_id` | string | yes | Unique problem identifier — convention: `"<benchmark>/<id>"` |
 | `question` | string | yes | The full problem statement |
-| `answer` | string | yes | The gold answer — for coding problems a single-line expression or one-liner, for reasoning problems the exact answer. It grounds and verifies Stage 1: the trace must end with the single line "Therefore, the answer is: <answer>", so the answer must fit on one line |
+| `answer` | string | yes | The gold answer — for coding problems the solution implementation (one-liner or multi-line function body/snippet), for reasoning problems the exact answer. It grounds and verifies Stage 1: the trace ends with "Therefore, the answer is: <answer>" and is verified against the gold answer |
 
 Example `coding.json`:
 

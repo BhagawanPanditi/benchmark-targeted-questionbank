@@ -28,26 +28,56 @@ logger = logging.getLogger(__name__)
 
 MAX_ANSWER_ATTEMPTS = 3
 
-# Matches the mandated final line, case-insensitively, at end-of-line.
-FINAL_ANSWER_RE = re.compile(
-    r"therefore,\s*the\s+answer\s+is:\s*(?P<answer>.+?)\s*$",
-    re.IGNORECASE | re.MULTILINE,
-)
+
+def clean_answer(text: str) -> str:
+    """Clean and extract code/text from an answer, stripping markdown fences."""
+    t = str(text).strip()
+    # Strip markdown code fences if present: ```lang ... ``` or ``` ... ```
+    m = re.search(r"```(?:[a-zA-Z0-9_+-]*)[ \t]*\r?\n?(.*?)\r?\n?```", t, re.DOTALL)
+    if m:
+        t = m.group(1).strip()
+    elif t.startswith("```"):
+        t = re.sub(r"^```[a-zA-Z0-9_+-]*[ \t]*\r?\n?", "", t)
+        t = re.sub(r"\r?\n?[ \t]*```$", "", t).strip()
+    return t.strip()
 
 
 def normalize_answer(text: str) -> str:
-    """Normalize an answer string for comparison: case, whitespace, punctuation."""
-    text = str(text).strip().lower()
+    """Normalize an answer string for comparison: case, whitespace, punctuation, quotes."""
+    text = clean_answer(str(text))
+    text = text.lower()
     text = re.sub(r"\s+", " ", text)
-    return text.strip(" \t.;,:\"'`")
+    return text.strip(" \t.;,:\"'`*")
 
 
 def extract_final_answer(reasoning: str) -> str | None:
-    """Return the last "Therefore, the answer is: ..." line, or None."""
-    matches = FINAL_ANSWER_RE.findall(str(reasoning))
+    """Extract the final answer after the last 'Therefore, the answer is:' line."""
+    matches = list(
+        re.finditer(r"therefore,\s*the\s+answer\s+is:\s*", str(reasoning), re.IGNORECASE)
+    )
     if not matches:
         return None
-    return matches[-1].strip()
+    raw = str(reasoning)[matches[-1].end():].strip()
+    return clean_answer(raw)
+
+
+def answers_match(stated: str | None, gold: str) -> bool:
+    """Check whether stated answer matches gold answer, handling multi-line and single-line cases."""
+    if stated is None:
+        return False
+    norm_gold = normalize_answer(gold)
+    norm_stated = normalize_answer(stated)
+    if norm_stated == norm_gold:
+        return True
+
+    # If gold is single line, check if the first line of stated matches gold
+    gold_clean = clean_answer(gold)
+    if "\n" not in gold_clean:
+        first_line = stated.strip().split("\n")[0]
+        if normalize_answer(first_line) == norm_gold:
+            return True
+
+    return False
 
 
 def _base_record(problem: dict) -> dict:
@@ -86,7 +116,7 @@ async def _generate_one(problem: dict, prompt: Template) -> dict:
                 "(attempt %d/%d)",
                 record.get("benchmark"), pid, attempt, MAX_ANSWER_ATTEMPTS,
             )
-        elif normalize_answer(stated) == normalize_answer(gold):
+        elif answers_match(stated, gold):
             record["reasoning"] = text
             record["reasoning_status"] = "ok"
             return record

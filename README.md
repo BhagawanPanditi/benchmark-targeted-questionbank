@@ -50,7 +50,7 @@ Each input file is a JSON **array of records** with these fields:
 | `sub_benchmark` | string or null | no | Subset/partition of the benchmark, e.g. `"2024-I"`; use `null` when there is none |
 | `problem_id` | string | yes | Unique problem identifier — convention: `"<benchmark>/<id>"`. This is the **resume key**: on re-runs, problems whose `problem_id` already exists in a stage's output file are skipped |
 | `question` | string | yes | The full problem statement |
-| `answer` | string | yes | The gold answer — for coding problems a single-line expression or one-liner, for reasoning problems the exact answer. Stage 1 grounds its reasoning trace to this value: the trace must end with the single line "Therefore, the answer is: <answer>" and is verified against the gold, so the answer must fit on one line |
+| `answer` | string | yes | The gold answer — for coding problems the solution implementation (one-liner or multi-line function body/snippet), for reasoning problems the exact answer. Stage 1 grounds its reasoning trace to this value: the trace ends with "Therefore, the answer is: <answer>" and is verified against the gold answer |
 
 Example `coding.json`:
 
