@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# Pipeline intermediate files and generated artifacts
+*_with_reasoning.json
+*_raw_concepts.json
+*_taxonomy.json
+*_with_failure_modes.json
+*_concept_graph.json
+*_questions_raw.json
+*_questions_validated.json
+*_prerequisite_questions.json
+*.progress.json
+*.tmp
+
+# Logs
+pipeline.log
