@@ -9,7 +9,7 @@ from string import Template
 
 PROMPT_CODING = Template(r"""You are an expert software engineer and computer science educator.
 
-You are given a coding problem and its reference solution. Write a step-by-step reasoning
+You are given a coding problem and its correct solution. Write a step-by-step reasoning
 trace that explains exactly how an expert would arrive at this solution from scratch.
 
 Your trace must cover:
@@ -24,21 +24,20 @@ Your trace must cover:
    step, not just what it does. Connect every decision back to a constraint or insight.
 5. EDGE CASES: Which edge cases does the solution handle, and how? Which edge cases
    would break a naive attempt?
-6. FINAL: Conclude your derivation and state the final solution code on the last line in the format:
-Therefore, the answer is: <solution>
+6. FINAL: End with exactly this line: "Therefore, the answer is: ${answer}"
 
 Problem:
 ${question}
 
-Reference Solution (for grounding):
+Correct Answer:
 ${answer}
 
 Write the reasoning trace now. Be specific to this problem, not generic.""")
 
 PROMPT_REASONING = Template(r"""You are an expert mathematician and logician.
 
-You are given a reasoning or math problem and its gold answer. Write a step-by-step
-reasoning trace that proves and derives this answer from scratch.
+You are given a reasoning or math problem and its correct answer. Write a step-by-step
+reasoning trace that leads to this answer.
 
 Your trace must cover:
 1. RESTATE: What is the problem asking? What quantity or object are we solving for?
@@ -53,13 +52,13 @@ Your trace must cover:
    obvious steps are often where wrong solvers make errors.
 5. VERIFY: Does the answer make sense? Perform a sanity check: dimensional analysis,
    boundary case check, or substitution back into the original problem.
-6. FINAL: Conclude your derivation and state the final result on the last line in the format:
-Therefore, the answer is: <answer>
+6. FINAL: End with exactly this line: "Therefore, the answer is: ${answer}"
 
 Problem:
 ${question}
 
-Gold Answer (for grounding):
+Correct Answer:
 ${answer}
 
 Write the reasoning trace now. Be specific to this problem, not generic.""")
+
