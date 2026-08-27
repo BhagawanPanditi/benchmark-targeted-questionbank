@@ -1,11 +1,11 @@
 """Stage 4 prompts — two-pass failure-mode extraction.
 
 PROMPT_PASS_A (reasoning-anchored): given the correct reasoning trace, find the
-failures that occur ALONG the correct solution path (8 failure types).
+failures that occur ALONG the correct solution path.
 
 PROMPT_PASS_B (anticipatory, wrong-solver simulation): WITHOUT the trace,
-simulate plausible-but-wrong first attempts (8 failure types) — catches
-failures that never appear on the correct path.
+simulate plausible-but-wrong first attempts — catches failures that never
+appear on the correct path.
 """
 from string import Template
 
@@ -65,6 +65,35 @@ SHORTCUT_ATTEMPT:
   to work on the examples provided but fails on edge cases or at scale.
   Example: Greedy interval selection when problem weights require DP.
 
+OVERCOUNTING_OR_UNDERCOUNTING:
+  In combinatorics, counting, or probability: double-counting overlapping outcomes
+  (e.g. failing inclusion-exclusion) or undercounting by missing symmetries/partitions.
+  Example: Counting configurations where order does not matter as if order did matter.
+
+INCOMPLETE_CASE_ANALYSIS:
+  The solver sets up valid casework but omits one or more critical subcases, boundary
+  scenarios, or degenerate configurations.
+  Example: Handling positive roots but omitting zero or negative roots.
+
+UNJUSTIFIED_LOGICAL_STEP:
+  In mathematical deduction or proof: asserting a property or step without sufficient
+  justification, or confusing necessary vs sufficient conditions (affirming the consequent).
+  Example: Assuming f(x) is monotonic without verifying its derivative sign.
+
+MUTABLE_STATE_OR_ALIASING:
+  In coding: unintended in-place mutation of a shared data structure, shallow copy bugs,
+  closure variable capture in loops, or modifying a container during iteration.
+  Example: Appending a mutable list to results without creating a copy.
+
+TYPE_OR_PRECISION_ERROR:
+  In coding/math: floating-point precision loss, integer division truncation, numeric
+  overflow, or type mismatch.
+  Example: Direct float equality `a == b` instead of `abs(a - b) < eps`.
+
+OTHER:
+  Use ONLY if the failure mechanism genuinely does not fit any category above.
+  When using OTHER, you MUST supply "proposed_new_type" in UPPER_SNAKE_CASE.
+
 Problem:
 ${question}
 
@@ -80,7 +109,8 @@ ${normalized_taxonomy}
 
 Return a JSON array of failure modes. Each entry:
 {
-  "failure_type": "MISSING_PREREQUISITE | WRONG_MENTAL_MODEL | MISSING_TRICK_OR_INSIGHT | COMMON_MISTAKE | FALSE_ASSUMPTION | MISREAD_CONSTRAINTS | MISSING_DOMAIN_KNOWLEDGE | SHORTCUT_ATTEMPT",
+  "failure_type": "MISSING_PREREQUISITE | WRONG_MENTAL_MODEL | MISSING_TRICK_OR_INSIGHT | COMMON_MISTAKE | FALSE_ASSUMPTION | MISREAD_CONSTRAINTS | MISSING_DOMAIN_KNOWLEDGE | SHORTCUT_ATTEMPT | OVERCOUNTING_OR_UNDERCOUNTING | INCOMPLETE_CASE_ANALYSIS | UNJUSTIFIED_LOGICAL_STEP | MUTABLE_STATE_OR_ALIASING | TYPE_OR_PRECISION_ERROR | OTHER",
+  "proposed_new_type": "string (UPPER_SNAKE_CASE, only when failure_type is OTHER, else null)",
   "description": "1-2 sentences: exactly what the failure is for THIS specific problem, not generic",
   "concept_involved": "canonical.concept.from.taxonomy",
   "is_new_concept": true | false,
@@ -174,12 +204,17 @@ REPRESENTATION_ERROR:
   Example: Using adjacency matrix for a sparse graph with 10^5 nodes (memory blows up).
   Example: Storing cumulative counts when the problem requires point values.
 
+OTHER:
+  Use ONLY if the wrong attempt represents a fundamentally different failure mechanism.
+  When using OTHER, you MUST supply "proposed_new_type" in UPPER_SNAKE_CASE.
+
 For each wrong attempt, return:
 {
   "attempt_description": "2-3 sentences: what the wrong solver does, specifically",
   "why_it_seems_reasonable": "1-2 sentences: why a capable solver would confidently try this",
   "wrong_answer_or_behavior": "what this approach produces or how it fails",
-  "failure_type": "WRONG_PROBLEM_FRAME | PLAUSIBLE_WRONG_ALGORITHM | KNOWLEDGE_ILLUSION | PATTERN_OVERFITTING | COMPLEXITY_BLINDNESS | PHANTOM_CONSTRAINT | TERMINATION_ERROR | REPRESENTATION_ERROR",
+  "failure_type": "WRONG_PROBLEM_FRAME | PLAUSIBLE_WRONG_ALGORITHM | KNOWLEDGE_ILLUSION | PATTERN_OVERFITTING | COMPLEXITY_BLINDNESS | PHANTOM_CONSTRAINT | TERMINATION_ERROR | REPRESENTATION_ERROR | OTHER",
+  "proposed_new_type": "string (UPPER_SNAKE_CASE, only when failure_type is OTHER, else null)",
   "description": "1-2 sentences: the precise failure for THIS specific problem",
   "concept_involved": "canonical.concept.from.taxonomy or new concept in dot-notation",
   "is_new_concept": true | false,

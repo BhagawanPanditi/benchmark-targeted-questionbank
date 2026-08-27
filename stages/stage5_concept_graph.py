@@ -38,6 +38,29 @@ logger = logging.getLogger(__name__)
 MAX_PREREQUISITES = 5
 MAX_TRANSITIVE_DEPTH = 3
 
+CODING_EXAMPLES = """Examples of correct prerequisite relationships:
+  algorithms.technique.binary-search requires:
+    → algorithms.sorting.sorted-order-property
+    → algorithms.iteration.loop-invariants
+  dp.technique.memoization requires:
+    → algorithms.recursion.recursive-decomposition
+    → data-structures.mapping.dictionary
+  graph.traversal.dijkstra requires:
+    → graph.representation.adjacency-list
+    → data-structures.heap.min-heap
+    → graph.traversal.bfs (as conceptual foundation)"""
+
+REASONING_EXAMPLES = """Examples of correct prerequisite relationships:
+  combinatorics.counting.inclusion-exclusion requires:
+    → combinatorics.counting.set-intersection-union
+    → combinatorics.counting.addition-subtraction-principles
+  proof-technique.induction.strong-induction requires:
+    → proof-technique.induction.mathematical-induction
+    → logic.proof-technique.base-case-verification
+  number-theory.divisibility.modular-arithmetic requires:
+    → number-theory.divisibility.division-algorithm
+    → algebra.arithmetic.integers-and-remainders"""
+
 
 def _coerce_result(concept: str, data: Any) -> dict:
     """Normalize one LLM prerequisite response (cap at MAX_PREREQUISITES)."""
@@ -241,7 +264,11 @@ async def run(
         for edge in existing_graph.get("edges", []):
             if isinstance(edge, dict) and edge.get("from") and edge.get("to"):
                 edges_by_from.setdefault(str(edge["from"]), []).append(str(edge["to"]))
-        processed = existing_graph.get("processed") or existing_graph.get("nodes")
+        # Only trust nodes explicitly recorded in 'processed' (or nodes with known outgoing edges)
+        processed = existing_graph.get("processed")
+        if processed is None:
+            # Older graph without 'processed' field: only trust nodes that have outgoing edges
+            processed = [n for n in existing_graph.get("nodes", []) if n in edges_by_from]
         concept_set = set(concepts)
         seeded = 0
         for node in processed:
@@ -284,6 +311,7 @@ async def run(
         domain, len(concepts), len(concepts) - len(pending), len(pending),
     )
 
+    domain_examples = CODING_EXAMPLES if domain == "coding" else REASONING_EXAMPLES
     lock = asyncio.Lock()
     tax_lock = asyncio.Lock()
     counters = {"ok": 0, "failed": 0, "skipped": len(concepts) - len(pending)}
@@ -317,6 +345,7 @@ async def run(
             domain=domain,
             concept=concept,
             all_concepts="\n".join(concepts),
+            examples=domain_examples,
         )
         try:
             data = await call_llm(prompt_text, expect_json=True)

@@ -26,17 +26,7 @@ Rules:
   - Be conservative: only list concepts that are genuinely REQUIRED to understand
     "${concept}", not merely helpful or related.
 
-Examples of correct prerequisite relationships:
-  algorithms.technique.binary-search requires:
-    → algorithms.sorting.sorted-order-property
-    → algorithms.iteration.loop-invariants
-  dp.technique.memoization requires:
-    → algorithms.recursion.recursive-decomposition
-    → data-structures.mapping.dictionary
-  graph.traversal.dijkstra requires:
-    → graph.representation.adjacency-list
-    → data-structures.heap.min-heap
-    → graph.traversal.bfs (as conceptual foundation)
+${examples}
 
 Return ONLY valid JSON:
 {

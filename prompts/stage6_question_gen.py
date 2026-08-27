@@ -60,8 +60,8 @@ CRITICAL REQUIREMENTS — your question must satisfy ALL of these:
      Include an example where the mistake produces a plausible-looking wrong answer.
 
    For FALSE_ASSUMPTION:
-     Include an input that VIOLATES the false assumption. The question must make
-     clear this input is valid. The wrong approach fails specifically on this input.
+     Include an input that VIOLATES the false assumption (e.g. negative numbers, empty inputs,
+     non-distinct values). The question must make clear this input is valid.
 
    For MISREAD_CONSTRAINTS:
      Include a constraint that is easy to overlook. A careful reader and a careless
@@ -69,29 +69,68 @@ CRITICAL REQUIREMENTS — your question must satisfy ALL of these:
      not prominently.
 
    For MISSING_DOMAIN_KNOWLEDGE:
-     Isolate exactly the piece of domain knowledge described. The question should be
-     trivial given that knowledge and opaque without it.
+     Isolate exactly the piece of domain knowledge described (e.g. language-specific behavior,
+     IEEE float precision). The question should be trivial given that knowledge and opaque without it.
 
    For SHORTCUT_ATTEMPT:
      Include a specific case where the shortcut fails. The shortcut should work on
-     all other examples. The question should include at least one example where the
-     shortcut gives a wrong answer.
+     all other examples, but fail on the included edge case.
+
+   For OVERCOUNTING_OR_UNDERCOUNTING:
+     Include elements with overlap or symmetry. The question should specifically expose
+     double-counting overlapping cases or failing to divide by identical permutations.
+
+   For INCOMPLETE_CASE_ANALYSIS:
+     Require handling a small set of cases where omitting one boundary case (e.g. 0, empty,
+     single element, duplicates) produces a specific wrong answer.
+
+   For UNJUSTIFIED_LOGICAL_STEP:
+     Design a problem where a tempting heuristic or unproven assumption (e.g. assuming
+     symmetry or monotonicity) fails on an explicit counterexample.
+
+   For MUTABLE_STATE_OR_ALIASING:
+     Construct a scenario where in-place mutation of a shared list/object or closure variable
+     capture causes subsequent operations or return values to be corrupted.
+
+   For TYPE_OR_PRECISION_ERROR:
+     Construct a problem where float rounding, integer overflow, or integer division truncation
+     creates a noticeable numerical error if not handled properly.
+
+   For WRONG_PROBLEM_FRAME:
+     Make the true goal subtly different from the tempting misframed goal (e.g. finding
+     indices vs values, count vs subset), so the misframed solver outputs a specific wrong format/value.
 
    For PLAUSIBLE_WRONG_ALGORITHM:
      Set up constraints that make the wrong algorithm seem correct (passes small cases)
-     but reveal its failure on a slightly larger or differently structured case.
+     but reveal its failure on a slightly larger or differently structured case (e.g. greedy vs DP).
 
    For KNOWLEDGE_ILLUSION:
-     Write a question where the illusion (the subtly wrong rule) gives a specific
-     wrong answer, and the correct rule gives a different specific right answer.
+     Write a question where the illusion (the subtly wrong rule with unmet preconditions)
+     gives a specific wrong answer, and the correct rule gives a different specific right answer.
 
    For PATTERN_OVERFITTING:
      Make the problem superficially resemble the pattern the overfitter would apply
-     but include a structural difference that breaks that pattern.
+     (e.g. sliding window) but include a structural feature that breaks that pattern.
+
+   For COMPLEXITY_BLINDNESS:
+     Make constraints tight enough that a naive O(N^2) or brute force solution will time out,
+     requiring the linear or logarithmic approach.
 
    For PHANTOM_CONSTRAINT:
      Write a question where the phantom constraint (the one that is NOT there) would
      change the answer if it were true. Make both answers specific values.
+
+   For TERMINATION_ERROR:
+     Construct a problem where an off-by-one loop limit or early termination condition produces
+     a specific missing or extra element.
+
+   For REPRESENTATION_ERROR:
+     Construct a problem where an inefficient or incorrect data structure (e.g. list lookups
+     instead of hash sets) causes wrong outputs or performance failure.
+
+   For OTHER:
+     Target the specific root cause described; ensure the wrong approach yields a predictable,
+     checkable trap output.
 
 4. STANDALONE: Solvable without any reference to the source problem or benchmark.
    No prior context needed.
@@ -141,37 +180,82 @@ CRITICAL REQUIREMENTS — your question must satisfy ALL of these:
 2. TARGETED: Tests the SPECIFIC failure mode, not the general topic area.
    Discriminates between a learner with the failure and one without it.
 
-3. FAILURE-TYPE-SPECIFIC design rules (same logic as coding, adapted for math/reasoning):
+3. FAILURE-TYPE-SPECIFIC design rules:
+
+   For MISSING_PREREQUISITE:
+     Write a problem that directly checks the prerequisite definition, formula, or lemma.
+     The problem should be clean and straightforward once the prerequisite is known.
+
+   For MISSING_DOMAIN_KNOWLEDGE:
+     Isolate the specific math identity, theorem, or property. The problem should be
+     unsolvable without that knowledge but direct with it.
+
+   For SHORTCUT_ATTEMPT:
+     Construct a problem where a tempting heuristic or superficial shortcut fails on
+     an explicit boundary case or scale.
 
    For MISSING_TRICK_OR_INSIGHT:
      The problem is not solvable by brute enumeration in a reasonable way. The insight
-     is the only clean path. Include a scale hint that makes brute force clearly infeasible.
+     (e.g. parity, invariants, symmetry, algebraic substitution) is the only clean path.
 
    For COMMON_MISTAKE:
-     The most natural first calculation or approach gives a specific wrong numerical answer.
-     Include this wrong answer as a plausible-looking option (even in free-response format,
-     name the trap answer so the validator can check it).
+     The most natural first calculation or algebraic slip gives a specific wrong numerical answer.
+     Name the exact trap value in the trap description.
 
    For FALSE_ASSUMPTION:
-     Construct a scenario that explicitly violates the false assumption.
-     The wrong answer (from the assumption) and the right answer must be different numbers.
+     Construct a scenario that explicitly violates the false assumption (e.g. non-integer values,
+     negative numbers, non-disjoint sets). The wrong answer and the right answer must be different numbers.
 
    For MISREAD_CONSTRAINTS:
      A careful reader and a careless reader get different numerical answers.
-     The constraint that is easy to miss must be stated but not highlighted.
+     The constraint that is easy to miss must be stated clearly but not highlighted.
 
    For WRONG_MENTAL_MODEL / KNOWLEDGE_ILLUSION:
      Two plausible-sounding approaches give two different numerical answers.
-     Only one is mathematically correct. Name the wrong approach so the trap is verifiable.
+     Only one is mathematically correct. Name the wrong approach and its specific wrong number.
+
+   For OVERCOUNTING_OR_UNDERCOUNTING:
+     A combinatorics or counting question where overlapping subsets or symmetries tempt
+     a naive count (e.g. double-counting the intersection or forgetting to divide by n!).
+     The trap answer must be the exact unadjusted count.
+
+   For INCOMPLETE_CASE_ANALYSIS:
+     A problem requiring 2-3 distinct cases where omitting one case (e.g. $x=0$, degenerate case)
+     yields a specific wrong sum or count.
+
+   For UNJUSTIFIED_LOGICAL_STEP:
+     A problem where assuming an unproven property (e.g. assuming the converse or assuming
+     collinearity) leads to a specific wrong result.
+
+   For WRONG_PROBLEM_FRAME:
+     A problem where misinterpreting what quantity is being asked for (e.g. perimeter vs area,
+     probability vs odds) yields a specific wrong numerical value.
+
+   For PLAUSIBLE_WRONG_ALGORITHM:
+     A problem where a standard but inappropriate technique (e.g. greedy pairing instead of
+     dynamic programming/bipartite matching) yields a suboptimal/incorrect count.
 
    For PATTERN_OVERFITTING:
-     Problem superficially resembles a known pattern but has a structural feature
-     that breaks the pattern. Both the pattern answer and the correct answer must
-     be specific numbers.
+     Problem superficially resembles a known formula/pattern but has a structural feature
+     that breaks the formula. Both the pattern answer and correct answer must be specific numbers.
+
+   For COMPLEXITY_BLINDNESS:
+     Make numbers large enough that manual brute force enumeration is impossible, forcing
+     algebraic reduction or combinatorial factoring.
 
    For PHANTOM_CONSTRAINT:
      The assumed constraint (not in the problem) would change the answer if true.
      State both what the answer would be with and without the phantom constraint.
+
+   For TERMINATION_ERROR:
+     A sequence, series, or recurrence problem where stopping one term early or late
+     produces a specific off-by-one value.
+
+   For REPRESENTATION_ERROR / TYPE_OR_PRECISION_ERROR:
+     A problem exposing fractional representation errors or modular residue representation errors.
+
+   For OTHER:
+     Target the specific failure described; ensure the wrong approach yields a checkable wrong number.
 
 4. DEFINITE ANSWER: Exactly one correct answer, verifiable without ambiguity.
    Include the answer inline.

@@ -19,7 +19,7 @@ Examples of correct merges:
   data-structures.hash.hashmap + mapping.dict.dictionary
     → data-structures.mapping.dictionary
   math.arithmetic.modular + algorithms.math.modular-arithmetic
-    → math.modular-arithmetic.modular-inverse
+    → math.modular-arithmetic.congruence-operations
   dp.dynamic-programming.knapsack + algorithms.dp.0-1-knapsack
     → dp.knapsack.zero-one
 

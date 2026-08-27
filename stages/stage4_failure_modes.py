@@ -20,13 +20,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm
 
 from prompts.stage4_failure_modes import PROMPT_PASS_A, PROMPT_PASS_B
-from utils.constants import SEVERITY_RANK
+from utils.constants import SEVERITY_RANK, VALID_FAILURE_TYPES
 from utils.io import load_json, load_json_obj, require_file, save_json
 from utils.llm import LLMError, call_llm, set_concurrency
 
@@ -54,7 +55,24 @@ def _sanitize(entries: Any, source: str) -> list[dict]:
             logger.debug("dropping malformed failure mode entry: %r", str(entry)[:200])
             continue
         fm = dict(entry)
-        fm["failure_type"] = str(fm["failure_type"]).strip().upper()
+        raw_type = str(fm["failure_type"]).strip().upper().replace(" ", "_").replace("-", "_")
+
+        # Allow valid enum types; for OTHER or novel types, support proposed_new_type
+        if raw_type == "OTHER" or raw_type not in VALID_FAILURE_TYPES:
+            proposed = str(fm.get("proposed_new_type") or "").strip().upper().replace(" ", "_").replace("-", "_")
+            if proposed and re.match(r"^[A-Z0-9_]+$", proposed):
+                fm["failure_type"] = proposed
+                fm["is_new_failure_type"] = True
+                logger.info("Stage 4: discovered proposed new failure type: %s", proposed)
+            elif re.match(r"^[A-Z0-9_]+$", raw_type) and raw_type != "OTHER":
+                fm["failure_type"] = raw_type
+                fm["is_new_failure_type"] = True
+                logger.info("Stage 4: using non-standard failure type: %s", raw_type)
+            else:
+                fm["failure_type"] = "OTHER"
+        else:
+            fm["failure_type"] = raw_type
+
         fm["concept_involved"] = str(fm["concept_involved"]).strip().lower()
         severity = str(fm.get("severity", "major")).strip().lower()
         fm["severity"] = severity if severity in SEVERITY_RANK else "major"
