@@ -28,6 +28,49 @@ STAGES_TABLE = """| Stage | Description | Input | Output | Estimated LLM Calls p
 | 8 | Output assembly | *_questions_validated.json | *_prerequisite_questions.json | 0 |
 | 9 | README generation | all stats | README.md | 0 |"""
 
+INPUT_FORMAT = """### Record Format
+
+Each input file is a JSON **array of records**. All five fields below are read
+by the pipeline; `problem_id` is the resume key, so it must be unique within a
+file (and ideally unique across both files).
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `benchmark` | string | yes | Benchmark name, e.g. `"HumanEval"`, `"AIME"`, `"GPQA"` |
+| `sub_benchmark` | string or null | no | Subset/partition of the benchmark, e.g. `"2024-I"`; use `null` when there is none |
+| `problem_id` | string | yes | Unique problem identifier — convention: `"<benchmark>/<id>"` |
+| `question` | string | yes | The full problem statement |
+| `answer` | string | yes | The gold answer — for coding problems a single-line expression or one-liner, for reasoning problems the exact answer. It grounds and verifies Stage 1: the trace must end with the single line "Therefore, the answer is: <answer>", so the answer must fit on one line |
+
+Example `coding.json`:
+
+```json
+[
+  {
+    "benchmark": "HumanEval",
+    "sub_benchmark": null,
+    "problem_id": "HumanEval/0",
+    "question": "def has_close_elements(solution: list[float], threshold: float) -> bool:\\n    # Write a function that returns true if the given list has two elements\\n    # that are closer to each other than threshold.",
+    "answer": "any(abs(a - b) < threshold for i, a in enumerate(solution) for b in solution[i + 1:])"
+  }
+]
+```
+
+Example `reasoning.json`:
+
+```json
+[
+  {
+    "benchmark": "AIME",
+    "sub_benchmark": "2024-I",
+    "problem_id": "AIME/2024-I-1",
+    "question": "Let X be the number of ordered triples (a, b, c) of positive integers ...",
+    "answer": "208"
+  }
+]
+```
+"""
+
 BUDGET_BLOCK = """Per 100 source problems:
   Stage 1 (reasoning generation):       100 calls
   Stage 2 (concept extraction):         100 calls
@@ -228,11 +271,16 @@ def build_readme(input_paths: dict[str, str | Path | None]) -> str:
     lines.append(_input_row("coding.json", input_paths.get("coding")))
     lines.append(_input_row("reasoning.json", input_paths.get("reasoning")))
     lines.append("")
+    lines.append(INPUT_FORMAT)
+    lines.append("")
     lines.append("## How to Run")
+    lines.append("")
+    lines.append("Place your input files `coding.json` and `reasoning.json` in the")
+    lines.append("project root (record format above), then run:")
     lines.append("")
     lines.append("```bash")
     lines.append("pip install -r requirements.txt")
-    lines.append("python run_pipeline.py --coding coding.json --reasoning reasoning.json")
+    lines.append("python run_pipeline.py")
     lines.append("```")
     lines.append("")
     lines.append("Optional flags:")

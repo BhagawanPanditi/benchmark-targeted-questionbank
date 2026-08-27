@@ -14,5 +14,9 @@ __pycache__/
 *.progress.json
 *.tmp
 
+# User-provided benchmark input files (placed in the project root)
+coding.json
+reasoning.json
+
 # Logs
 pipeline.log

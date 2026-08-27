@@ -2,7 +2,10 @@
 """Entry point for the prerequisite question bank pipeline.
 
 Usage:
-    python run_pipeline.py --coding coding.json --reasoning reasoning.json
+    python run_pipeline.py
+
+Input files are read from the project root: ``coding.json`` and
+``reasoning.json`` (see README.md for the record format).
 
 Optional flags:
     --stages 1,2,3      run only specific stages (comma-separated, default: all)
@@ -63,17 +66,8 @@ def setup_logging() -> None:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate targeted diagnostic prerequisite questions from benchmark problems."
-    )
-    parser.add_argument(
-        "--coding",
-        default=None,
-        help="Path to coding.json (required when running the coding domain)",
-    )
-    parser.add_argument(
-        "--reasoning",
-        default=None,
-        help="Path to reasoning.json (required when running the reasoning domain)",
+        description="Generate targeted diagnostic prerequisite questions from the "
+        "benchmark problem files coding.json and reasoning.json in the project root.",
     )
     parser.add_argument(
         "--stages",
@@ -111,18 +105,16 @@ def resolve_stages(raw: str) -> list[int]:
     return sorted(stages)
 
 
-def validate_inputs(domains: list[str], inputs: dict[str, str | None]) -> dict[str, Path]:
+def validate_inputs(domains: list[str]) -> dict[str, Path]:
+    """Resolve and sanity-check the fixed input files in the project root."""
     paths: dict[str, Path] = {}
     for domain in domains:
-        raw_path = inputs.get(domain)
-        if not raw_path:
-            raise SystemExit(
-                f"error: --{domain} <path.json> is required when running domain '{domain}' "
-                f"(or omit the domain with --domain)"
-            )
-        path = Path(raw_path)
+        path = config.input_file(domain)
         if not path.exists():
-            raise SystemExit(f"error: input file not found: {path}")
+            raise SystemExit(
+                f"error: input file not found: {path} "
+                f"(place {domain}.json in the project root)"
+            )
         records = load_json(path)
         for record in records:
             for field in ("problem_id", "question", "answer"):
@@ -198,7 +190,7 @@ def main(argv: list[str] | None = None) -> None:
     domains = (
         [args.domain] if args.domain in ("coding", "reasoning") else list(config.DOMAINS)
     )
-    paths = validate_inputs(domains, {"coding": args.coding, "reasoning": args.reasoning})
+    paths = validate_inputs(domains)
 
     logger.info(
         "Pipeline start: domains=%s stages=%s base_url=%s model=%s",

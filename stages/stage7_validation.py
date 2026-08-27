@@ -24,80 +24,17 @@ import asyncio
 import logging
 from collections import defaultdict
 from pathlib import Path
-from string import Template
 
 import config
 from tqdm import tqdm
 
+from prompts.stage7_validation import PROMPT_VALIDATE
+from utils.constants import SEVERITY_RANK
 from utils.io import load_json, require_file, save_json
 from utils.llm import LLMError, call_llm
 from utils.similarity import max_jaccard_against, tokenize
 
 logger = logging.getLogger(__name__)
-
-SEVERITY_RANK = {"critical": 3, "major": 2, "minor": 1}
-
-PROMPT_VALIDATE = Template(r"""You are a quality reviewer for a diagnostic question bank.
-
-This question was generated to target a specific failure mode. Determine whether
-it actually does so, or whether it has drifted into a generic topic question.
-
-Failure Mode It Should Target:
-  Type: ${failure_type}
-  Description: ${description}
-  What correct understanding looks like: ${what_correct_understanding_looks_like}
-
-Generated Question:
-${question}
-
-Stated trap (what a failing learner does and their specific wrong answer):
-${trap}
-
-Why the trap is tempting:
-${why_trap_is_tempting}
-
-Evaluate on exactly these four criteria:
-
-DISCRIMINATION:
-  Would a learner WITH the failure mode described likely answer this WRONG?
-  Would a learner WITHOUT it likely answer it RIGHT?
-  Pass requires YES to both. Fail if the question is too easy (everyone gets it right)
-  or too hard (everyone gets it wrong regardless of the failure mode).
-
-ISOLATION:
-  Does the question test primarily this failure mode, or does it require so many
-  other unrelated concepts that a learner could fail for completely unrelated reasons?
-  Pass if the failure mode is the primary discriminator.
-  Fail if the question is a multi-concept problem where this failure is one of many.
-
-DRIFT:
-  Has the question stayed focused on the failure mode, or drifted into being a
-  generic question on the topic area?
-  no_drift: clearly targets the failure mode
-  minor_drift: mostly on target with slight generalization
-  major_drift: has become a generic topic question
-
-TRAP_VALIDITY:
-  Is the stated trap answer actually wrong (not a trick question where both
-  answers are defensible)? Is the wrong answer specific and checkable?
-  valid: trap produces a clearly wrong, specific answer
-  invalid: trap answer is ambiguous, or actually could be correct
-
-A question PASSES only if:
-  discrimination = pass
-  AND isolation = pass
-  AND drift = no_drift OR minor_drift
-  AND trap_validity = valid
-
-Return ONLY valid JSON:
-{
-  "passes": true | false,
-  "discrimination": "pass | fail",
-  "isolation": "pass | fail",
-  "drift": "no_drift | minor_drift | major_drift",
-  "trap_validity": "valid | invalid",
-  "reason": "one sentence: why it passes, or the primary reason it fails"
-}""")
 
 
 def _sort_key(q: dict):
@@ -242,7 +179,7 @@ async def run(
     )
     require_file(
         source_questions_path,
-        f"(pass it via --{domain}) for the contamination check",
+        f"(place {domain}.json in the project root) for the contamination check",
     )
     questions = load_json(questions_raw_path)
     questions = [q for q in questions if q.get("id") is not None]

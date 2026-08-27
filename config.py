@@ -31,6 +31,16 @@ README_PATH = PIPELINE_DIR / "README.md"
 # --- Domains -----------------------------------------------------------------
 DOMAINS = ("coding", "reasoning")
 
+# --- Input files (fixed locations — no CLI flags) ----------------------------
+def input_file(domain: str) -> Path:
+    """Stage 1 input: the source benchmark records, in the project root.
+
+    ``coding.json`` and ``reasoning.json`` are the fixed input locations —
+    no CLI flags. Each file is a JSON array of records:
+    {"benchmark", "sub_benchmark", "problem_id", "question", "answer"}.
+    """
+    return PIPELINE_DIR / f"{domain}.json"
+
 # --- Per-domain file paths -----------------------------------------------------
 def reasoning_file(domain: str) -> Path:
     """Stage 1 output: source records + grounded reasoning trace."""
