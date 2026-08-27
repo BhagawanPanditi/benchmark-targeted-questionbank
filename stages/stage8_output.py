@@ -54,6 +54,7 @@ async def run(
     graph_path: Path,
     output_path: Path,
     domain: str,
+    concurrency: int | None = None,
 ) -> None:
     """Run Stage 8 for one domain."""
     require_file(

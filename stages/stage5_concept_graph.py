@@ -31,7 +31,7 @@ from tqdm import tqdm
 
 from prompts.stage5_concept_graph import PROMPT_PREREQ
 from utils.io import load_json_obj, require_file, save_json
-from utils.llm import LLMError, call_llm
+from utils.llm import LLMError, call_llm, set_concurrency
 
 logger = logging.getLogger(__name__)
 
@@ -188,8 +188,15 @@ def transitive_prerequisites(
     return closure
 
 
-async def run(taxonomy_path: Path, graph_path: Path, domain: str) -> None:
+async def run(
+    taxonomy_path: Path,
+    graph_path: Path,
+    domain: str,
+    concurrency: int | None = None,
+) -> None:
     """Run Stage 5 for one domain."""
+    if concurrency is not None:
+        set_concurrency(concurrency)
     require_file(
         taxonomy_path,
         f"(run stage 3 first for domain '{domain}')",

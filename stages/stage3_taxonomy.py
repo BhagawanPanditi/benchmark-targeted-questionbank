@@ -19,7 +19,7 @@ from typing import Any
 
 from prompts.stage3_taxonomy import PROMPT_NORMALIZE
 from utils.io import load_json, load_json_obj, require_file, save_json
-from utils.llm import LLMError, call_llm
+from utils.llm import LLMError, call_llm, set_concurrency
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +58,15 @@ def _write_taxonomy(
     save_json(path, doc)
 
 
-async def run(raw_concepts_path: Path, taxonomy_path: Path, domain: str) -> None:
+async def run(
+    raw_concepts_path: Path,
+    taxonomy_path: Path,
+    domain: str,
+    concurrency: int | None = None,
+) -> None:
     """Run Stage 3 for one domain."""
+    if concurrency is not None:
+        set_concurrency(concurrency)
     require_file(
         raw_concepts_path,
         f"(run stage 2 first for domain '{domain}')",

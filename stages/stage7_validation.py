@@ -31,7 +31,7 @@ from tqdm import tqdm
 from prompts.stage7_validation import PROMPT_VALIDATE
 from utils.constants import SEVERITY_RANK
 from utils.io import load_json, require_file, save_json
-from utils.llm import LLMError, call_llm
+from utils.llm import LLMError, call_llm, set_concurrency
 from utils.similarity import max_jaccard_against, tokenize
 
 logger = logging.getLogger(__name__)
@@ -171,8 +171,11 @@ async def run(
     validated_path: Path,
     source_questions_path: Path,
     domain: str,
+    concurrency: int | None = None,
 ) -> None:
     """Run Stage 7 for one domain."""
+    if concurrency is not None:
+        set_concurrency(concurrency)
     require_file(
         questions_raw_path,
         f"(run stage 6 first for domain '{domain}')",

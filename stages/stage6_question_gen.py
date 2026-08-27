@@ -28,7 +28,7 @@ from tqdm import tqdm
 
 from prompts.stage6_question_gen import PROMPT_CODING, PROMPT_REASONING
 from utils.io import load_json, load_json_obj, require_file, save_json
-from utils.llm import LLMError, call_llm
+from utils.llm import LLMError, call_llm, set_concurrency
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +68,15 @@ def _why_seems_reasonable(fm: dict) -> str:
 
 
 async def run(
-    failure_modes_path: Path, graph_path: Path, output_path: Path, domain: str
+    failure_modes_path: Path,
+    graph_path: Path,
+    output_path: Path,
+    domain: str,
+    concurrency: int | None = None,
 ) -> None:
     """Run Stage 6 for one domain."""
+    if concurrency is not None:
+        set_concurrency(concurrency)
     require_file(
         failure_modes_path,
         f"(run stage 4 first for domain '{domain}')",

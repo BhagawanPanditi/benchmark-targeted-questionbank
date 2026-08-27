@@ -25,6 +25,7 @@ Optional flags:
 ```text
   --stages 1,2,3      # run only specific stages (comma-separated)
   --domain coding     # run for one domain only
+  --concurrency 30    # max concurrent LLM requests (default: 30)
   --resume            # default: always on; completed records are always skipped
 ```
 

@@ -10,6 +10,7 @@ Input files are read from the project root: ``coding.json`` and
 Optional flags:
     --stages 1,2,3      run only specific stages (comma-separated, default: all)
     --domain coding     run for one domain only (default: both)
+    --concurrency 30    max concurrent LLM requests (default: 30)
     --resume            accepted for compatibility — resuming is ALWAYS on:
                         completed records (matched by problem_id / id) are skipped
 """
@@ -35,6 +36,7 @@ from stages import (
     stage9_readme,
 )
 from utils.io import load_json
+from utils.llm import set_concurrency
 
 logger = logging.getLogger("pipeline")
 
@@ -79,6 +81,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["coding", "reasoning", "both"],
         default="both",
         help="Run for one domain only (default: both)",
+    )
+    parser.add_argument(
+        "--concurrency",
+        "-c",
+        "--max-concurrent",
+        dest="concurrency",
+        type=int,
+        default=config.MAX_CONCURRENT,
+        help=f"Max concurrent LLM requests across workers (default: {config.MAX_CONCURRENT})",
     )
     parser.add_argument(
         "--resume",
@@ -129,21 +140,37 @@ def validate_inputs(domains: list[str]) -> dict[str, Path]:
 
 
 async def run_stages(
-    stages: list[int], domains: list[str], paths: dict[str, Path]
+    stages: list[int],
+    domains: list[str],
+    paths: dict[str, Path],
+    concurrency: int | None = None,
 ) -> None:
+    if concurrency is not None:
+        set_concurrency(concurrency)
     for stage_no in stages:
         if stage_no == 9:
             continue  # runs once, after every domain finishes stage 8
         for domain in domains:
             if stage_no == 1:
-                await stage1_reasoning.run(paths[domain], config.reasoning_file(domain), domain)
+                await stage1_reasoning.run(
+                    paths[domain],
+                    config.reasoning_file(domain),
+                    domain,
+                    concurrency=concurrency,
+                )
             elif stage_no == 2:
                 await stage2_raw_concepts.run(
-                    config.reasoning_file(domain), config.raw_concepts_file(domain), domain
+                    config.reasoning_file(domain),
+                    config.raw_concepts_file(domain),
+                    domain,
+                    concurrency=concurrency,
                 )
             elif stage_no == 3:
                 await stage3_taxonomy.run(
-                    config.raw_concepts_file(domain), config.taxonomy_file(domain), domain
+                    config.raw_concepts_file(domain),
+                    config.taxonomy_file(domain),
+                    domain,
+                    concurrency=concurrency,
                 )
             elif stage_no == 4:
                 await stage4_failure_modes.run(
@@ -151,10 +178,14 @@ async def run_stages(
                     config.taxonomy_file(domain),
                     config.failure_modes_file(domain),
                     domain,
+                    concurrency=concurrency,
                 )
             elif stage_no == 5:
                 await stage5_concept_graph.run(
-                    config.taxonomy_file(domain), config.concept_graph_file(domain), domain
+                    config.taxonomy_file(domain),
+                    config.concept_graph_file(domain),
+                    domain,
+                    concurrency=concurrency,
                 )
             elif stage_no == 6:
                 await stage6_question_gen.run(
@@ -162,6 +193,7 @@ async def run_stages(
                     config.concept_graph_file(domain),
                     config.questions_raw_file(domain),
                     domain,
+                    concurrency=concurrency,
                 )
             elif stage_no == 7:
                 await stage7_validation.run(
@@ -169,6 +201,7 @@ async def run_stages(
                     config.questions_validated_file(domain),
                     paths[domain],
                     domain,
+                    concurrency=concurrency,
                 )
             elif stage_no == 8:
                 await stage8_output.run(
@@ -177,14 +210,24 @@ async def run_stages(
                     config.concept_graph_file(domain),
                     config.final_output_file(domain),
                     domain,
+                    concurrency=concurrency,
                 )
     if 9 in stages:
-        await stage9_readme.run({d: paths.get(d) for d in config.DOMAINS})
+        await stage9_readme.run(
+            {d: paths.get(d) for d in config.DOMAINS},
+            concurrency=concurrency,
+        )
 
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     setup_logging()
+
+    if args.concurrency <= 0:
+        raise SystemExit(
+            f"error: --concurrency must be a positive integer (got {args.concurrency})"
+        )
+    set_concurrency(args.concurrency)
 
     stages = resolve_stages(args.stages)
     domains = (
@@ -193,11 +236,11 @@ def main(argv: list[str] | None = None) -> None:
     paths = validate_inputs(domains)
 
     logger.info(
-        "Pipeline start: domains=%s stages=%s base_url=%s model=%s",
-        domains, stages, config.LLM_BASE_URL, config.LLM_MODEL,
+        "Pipeline start: domains=%s stages=%s concurrency=%d base_url=%s model=%s",
+        domains, stages, config.MAX_CONCURRENT, config.LLM_BASE_URL, config.LLM_MODEL,
     )
     try:
-        asyncio.run(run_stages(stages, domains, paths))
+        asyncio.run(run_stages(stages, domains, paths, concurrency=args.concurrency))
     except SystemExit as exc:
         logger.error("pipeline aborted: %s", exc)
         raise

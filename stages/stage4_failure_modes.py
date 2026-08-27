@@ -28,7 +28,7 @@ from tqdm import tqdm
 from prompts.stage4_failure_modes import PROMPT_PASS_A, PROMPT_PASS_B
 from utils.constants import SEVERITY_RANK
 from utils.io import load_json, load_json_obj, require_file, save_json
-from utils.llm import LLMError, call_llm
+from utils.llm import LLMError, call_llm, set_concurrency
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +88,16 @@ def _merge(pass_a: list[dict], pass_b: list[dict]) -> list[dict]:
     return [best[key] for key in order]
 
 
-async def run(reasoning_path: Path, taxonomy_path: Path, output_path: Path, domain: str) -> None:
+async def run(
+    reasoning_path: Path,
+    taxonomy_path: Path,
+    output_path: Path,
+    domain: str,
+    concurrency: int | None = None,
+) -> None:
     """Run Stage 4 (two-pass) for one domain."""
+    if concurrency is not None:
+        set_concurrency(concurrency)
     require_file(
         reasoning_path,
         f"(run stage 1 first for domain '{domain}')",

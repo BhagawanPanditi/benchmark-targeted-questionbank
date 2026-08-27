@@ -30,6 +30,15 @@ class LLMError(Exception):
 _client: AsyncOpenAI | None = None
 _semaphore: asyncio.Semaphore | None = None
 _semaphore_loop: asyncio.AbstractEventLoop | None = None
+_semaphore_capacity: int | None = None
+
+
+def set_concurrency(concurrency: int) -> None:
+    """Update the global concurrency cap and reset the semaphore."""
+    global _semaphore, _semaphore_capacity
+    config.MAX_CONCURRENT = concurrency
+    _semaphore = None
+    _semaphore_capacity = None
 
 
 def get_client() -> AsyncOpenAI:
@@ -45,16 +54,21 @@ def get_client() -> AsyncOpenAI:
 
 
 def get_semaphore() -> asyncio.Semaphore:
-    """Return the concurrency semaphore, recreated if the event loop changed.
+    """Return the concurrency semaphore, recreated if the event loop or cap changed.
 
     Stages are each driven by their own asyncio.run() invocation, so a semaphore
     bound to a previous (closed) loop would raise on acquire.
     """
-    global _semaphore, _semaphore_loop
+    global _semaphore, _semaphore_loop, _semaphore_capacity
     running = asyncio.get_running_loop()
-    if _semaphore is None or _semaphore_loop is not running:
+    if (
+        _semaphore is None
+        or _semaphore_loop is not running
+        or _semaphore_capacity != config.MAX_CONCURRENT
+    ):
         _semaphore = asyncio.Semaphore(config.MAX_CONCURRENT)
         _semaphore_loop = running
+        _semaphore_capacity = config.MAX_CONCURRENT
     return _semaphore
 
 

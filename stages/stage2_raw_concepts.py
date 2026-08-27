@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from prompts.stage2_raw_concepts import PROMPT_CODING, PROMPT_REASONING
 from utils.io import load_json, require_file, save_json
-from utils.llm import LLMError, call_llm
+from utils.llm import LLMError, call_llm, set_concurrency
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,15 @@ def _coerce_raw_concepts(data: object) -> list[str] | None:
     return concepts or None
 
 
-async def run(input_path: Path, output_path: Path, domain: str) -> None:
+async def run(
+    input_path: Path,
+    output_path: Path,
+    domain: str,
+    concurrency: int | None = None,
+) -> None:
     """Run Stage 2 for one domain."""
+    if concurrency is not None:
+        set_concurrency(concurrency)
     require_file(
         input_path,
         f"(run stage 1 first for domain '{domain}')",

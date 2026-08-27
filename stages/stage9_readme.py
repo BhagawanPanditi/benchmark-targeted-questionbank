@@ -288,6 +288,7 @@ def build_readme(input_paths: dict[str, str | Path | None]) -> str:
     lines.append("```text")
     lines.append("  --stages 1,2,3      # run only specific stages (comma-separated)")
     lines.append("  --domain coding     # run for one domain only")
+    lines.append("  --concurrency 30    # max concurrent LLM requests (default: 30)")
     lines.append("  --resume            # default: always on; completed records are always skipped")
     lines.append("```")
     lines.append("")
@@ -330,7 +331,10 @@ def build_readme(input_paths: dict[str, str | Path | None]) -> str:
     return "\n".join(lines)
 
 
-async def run(input_paths: dict[str, str | Path | None]) -> None:
+async def run(
+    input_paths: dict[str, str | Path | None],
+    concurrency: int | None = None,
+) -> None:
     """Render and write README.md from the current pipeline state."""
     content = build_readme(input_paths)
     _write_text_atomic(config.README_PATH, content)

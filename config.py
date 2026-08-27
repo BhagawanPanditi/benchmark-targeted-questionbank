@@ -15,7 +15,7 @@ LLM_MODEL = (
 )
 
 # --- Concurrency / retry / timeouts ---------------------------------------
-MAX_CONCURRENT = 8
+MAX_CONCURRENT = 30
 RETRY_ATTEMPTS = 3
 TIMEOUT_SECONDS = 60
 
